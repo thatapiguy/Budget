@@ -1,0 +1,51 @@
+{
+  "name": "easy-budget",
+  "version": "1.0.0",
+  "description": "A modern personal finance management application for tracking expenses, budgets, and multiple accounts",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thatapiguy/easy-budget.git"
+  },
+  "keywords": [
+    "budget",
+    "finance",
+    "expense-tracker",
+    "typescript",
+    "react",
+    "sqlite"
+  ],
+  "author": "Vivek Bavishi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thatapiguy/easy-budget/issues"
+  },
+  "homepage": "https://github.com/thatapiguy/easy-budget#readme",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1",
+    "prettier": "^3.0.0",
+    "typescript": "^4.9.5"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
