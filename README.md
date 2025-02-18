@@ -135,8 +135,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📞 Support
 
-For support, please open an issue in the GitHub repository or contact us at support@easybudget.com.
+For support, please open an issue in the GitHub repository.
 
 ---
 
-Made with ❤️ by [Your Name]
+Made with ❤️ by Vivek Bavishi
