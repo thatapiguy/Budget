@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > This repository was created using GitHub Copilot and serves as an experimental project. While functional, it may not follow all industry best practices or security standards. Use at your own discretion.
-> 
+
 > [!IMPORTANT]
 > **Disclaimer:** This software is provided "as is", without warranty of any kind, express or implied. The author takes no responsibility for any damages or losses that may occur from using this software. By using this application, you acknowledge that:
 > - This is an experimental project
