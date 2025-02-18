@@ -1,5 +1,18 @@
 # Easy Budget - Personal Finance Made Simple
 
+> [!NOTE]
+> This repository was created using GitHub Copilot and serves as an experimental project. While functional, it may not follow all industry best practices or security standards. Use at your own discretion.
+> 
+> [!IMPORTANT]
+> **Disclaimer:** This software is provided "as is", without warranty of any kind, express or implied. The author takes no responsibility for any damages or losses that may occur from using this software. By using this application, you acknowledge that:
+> - This is an experimental project
+> - Financial data should be regularly backed up
+> - You should verify all calculations independently
+> - The author is not liable for any errors or financial discrepancies
+> - This is not a replacement for professional financial software
+
+# Easy Budget - Personal Finance Made Simple
+
 Easy Budget is a modern, user-friendly personal finance application designed to help you take control of your finances. With features like multi-account management, budget tracking, and smart transaction importing, Easy Budget makes managing your money effortless.
 
 ## 🌟 Key Features
@@ -55,7 +68,7 @@ Easy Budget is a modern, user-friendly personal finance application designed to 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/easy-budget.git
+git clone https://github.com/thatapiguy/easy-budget.git
 ```
 
 2. Install dependencies:
