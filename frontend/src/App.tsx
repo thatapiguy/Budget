@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import BudgetTracker from './components/BudgetTracker';
-import Navigation from './components/Navigation';
-import AccountDetails from './pages/AccountDetails';
-import { accountsApi, transactionsApi, AccountData, TransactionData } from './services/api';
-import AccountForm from './components/accounts/AccountForm';
+import BudgetTracker from './features/budgets/components/BudgetTracker';
+import Navigation from './features/layout/components/Navigation';
+import AccountDetails from './features/accounts/pages/AccountDetails';
+import { accountsApi, transactionsApi } from './services/api';
+import AccountForm from './features/accounts/components/AccountForm';
+import { Account, Transaction } from './types';
+import { CreateAccountData } from './types/api';
 
 const App: React.FC = () => {
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  const [transactions, setTransactions] = useState<TransactionData[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAccountForm, setShowAccountForm] = useState(false);
 
   useEffect(() => {
@@ -28,7 +30,7 @@ const App: React.FC = () => {
     loadData();
   }, []);
 
-  const handleAddAccount = async (data: { name: string; type: string; starting_balance: number }) => {
+  const handleAddAccount = async (data: CreateAccountData) => {
     try {
       await accountsApi.create(data);
       const accountsData = await accountsApi.getAll();
@@ -51,7 +53,7 @@ const App: React.FC = () => {
             <Route path="/" element={<BudgetTracker />} />
             <Route 
               path="/accounts/:id" 
-              element={<AccountDetails accounts={accounts} transactions={transactions} />} 
+              element={<AccountDetails />} 
             />
           </Routes>
         </main>

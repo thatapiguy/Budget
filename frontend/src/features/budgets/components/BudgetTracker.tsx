@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import BudgetForm from './budget/BudgetForm';
-import TransactionForm from './transactions/TransactionForm';
-import AccountForm from './accounts/AccountForm';
-import { transactionsApi, budgetsApi, accountsApi, TransactionData, BudgetData, AccountData } from '../services/api';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import BudgetForm from './BudgetForm';
+import TransactionForm from '../../transactions/components/TransactionForm';
+import AccountForm from '../../accounts/components/AccountForm';
+import { transactionsApi, budgetsApi, accountsApi } from '../../../services/api';
+import { Transaction } from '../../../types';
+import { TransactionData, BudgetData, AccountData } from '../../../types/api';
 import BudgetCategory from './BudgetCategory';
-import TransactionList from './TransactionList';
-import MonthPicker from './MonthPicker';
-
-interface Transaction {
-  id: number;
-  account_id: number;
-  category: string;
-  amount: number;
-  date: string;
-  description: string;
-}
+import TransactionList from '../../transactions/components/TransactionsList';
+import MonthPicker from '../../layout/components/MonthPicker';
 
 interface Budget {
   category: string;
@@ -94,21 +87,28 @@ const BudgetTracker: React.FC = () => {
     }
   };
 
-  const handleAddTransaction = async (data: Omit<Transaction, 'id'> & { account_id: number }) => {
+  const handleAddTransaction = async (data: Omit<TransactionData, 'id'>) => {
     try {
-      await transactionsApi.create(data);
-      loadData(); // Reload all data
+      await transactionsApi.create({
+        ...data,
+        type: data.amount < 0 ? 'expense' : 'income'
+      });
+      loadData();
       setShowTransactionForm(false);
     } catch (error) {
       console.error('Failed to add transaction:', error);
     }
   };
 
-  const handleEditTransaction = async (data: Omit<Transaction, 'id'> & { account_id: number }) => {
+  const handleEditTransaction = async (data: Omit<TransactionData, 'id'>) => {
     if (editingTransaction) {
       try {
-        await transactionsApi.update(editingTransaction.id, { ...data, account_id: editingTransaction.account_id });
-        loadData(); // Reload all data
+        await transactionsApi.update(editingTransaction.id, {
+          ...data,
+          account_id: editingTransaction.account_id,
+          type: data.amount < 0 ? 'expense' : 'income'
+        });
+        loadData();
         setEditingTransaction(null);
         setShowTransactionForm(false);
       } catch (error) {
@@ -224,7 +224,17 @@ const BudgetTracker: React.FC = () => {
                 ...Object.keys(budgets.annual)
               ]}
               accounts={accounts.filter(account => account.id !== undefined) as { id: number; name: string; }[]}
-              onSave={editingTransaction ? handleEditTransaction : handleAddTransaction}
+              onSave={(data) => {
+                const transactionData: Omit<TransactionData, 'id'> = {
+                  ...data,
+                  type: data.amount < 0 ? 'expense' : 'income'
+                };
+                if (editingTransaction) {
+                  handleEditTransaction(transactionData);
+                } else {
+                  handleAddTransaction(transactionData);
+                }
+              }}
               editTransaction={editingTransaction || undefined}
               onCancel={handleTransactionFormClose}
             />

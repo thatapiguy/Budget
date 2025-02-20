@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Plus } from 'lucide-react';
-import { AccountData } from '../services/api';
+import { AccountData } from '../../../types/api';
 
 interface NavigationProps {
   accounts: AccountData[];

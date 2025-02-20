@@ -1,15 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Edit, Trash } from 'lucide-react';
-
-interface Transaction {
-  id: number;
-  account_id: number;  // Add this field
-  category: string;
-  amount: number;
-  date: string;
-  description: string;
-}
+import { Transaction } from '../types';
 
 interface TransactionListProps {
   transactions: Transaction[];

@@ -19,6 +19,47 @@ export async function setupDatabase() {
     await db.exec('PRAGMA foreign_keys = ON');
     await db.exec('PRAGMA journal_mode = WAL');
 
+    // Add migration for existing transactions table
+    await db.exec(`
+      PRAGMA foreign_keys=OFF;
+      
+      BEGIN TRANSACTION;
+
+      -- Create temporary table
+      CREATE TABLE IF NOT EXISTS transactions_backup (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')) DEFAULT 'expense',
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+
+      -- Copy data from the existing table (if it exists)
+      INSERT OR IGNORE INTO transactions_backup 
+        SELECT 
+          id, 
+          account_id, 
+          date, 
+          category, 
+          ABS(amount) as amount, 
+          description,
+          CASE WHEN amount < 0 THEN 'expense' ELSE 'income' END as type
+        FROM transactions;
+
+      -- Drop the old table
+      DROP TABLE IF EXISTS transactions;
+
+      -- Rename the new table to the original name
+      ALTER TABLE transactions_backup RENAME TO transactions;
+
+      COMMIT;
+      
+      PRAGMA foreign_keys=ON;
+    `);
+
     // Create tables IF NOT EXISTS (won't affect existing data)
     await db.exec(`
       CREATE TABLE IF NOT EXISTS accounts (
@@ -39,6 +80,7 @@ export async function setupDatabase() {
         category TEXT NOT NULL,
         amount REAL NOT NULL,
         description TEXT,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')) DEFAULT 'expense',
         FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
       );
     `);

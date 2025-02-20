@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { read, utils } from 'xlsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 
 // Update API URL to use current hostname
 const API_URL = `http://${window.location.hostname}:3001/api`;
@@ -114,22 +114,25 @@ const ImportWizard: React.FC<ImportWizardProps> = ({ accountId, onImportComplete
   };
 
   const handleImport = async () => {
-    try {
-      const formattedData = fileData.map(row => {
-        const rowObj: any = {};
-        columns.forEach((col, index) => {
-          rowObj[col] = row[index];
-        });
-
-        return {
-          account_id: accountId,
-          date: formatDate(rowObj[mapping.date], dateFormat),
-          description: rowObj[mapping.description] || '',
-          amount: parseAmount(rowObj[mapping.amount]),
-          category: rowObj[mapping.category] || 'Uncategorized'
-        };
+    const formattedData = fileData.map(row => {
+      const rowObj: any = {};
+      columns.forEach((col, index) => {
+        rowObj[col] = row[index];
       });
 
+      const { amount, type } = parseAmount(rowObj[mapping.amount]);
+
+      return {
+        account_id: accountId,
+        date: formatDate(rowObj[mapping.date], dateFormat),
+        description: rowObj[mapping.description] || '',
+        amount: amount,
+        type: type,
+        category: rowObj[mapping.category] || 'Uncategorized'
+      };
+    });
+
+    try {
       console.log('Sending request to:', `${API_URL}/transactions/batch`);
       console.log('Request payload:', { transactions: formattedData });
 
@@ -241,36 +244,50 @@ const ImportWizard: React.FC<ImportWizardProps> = ({ accountId, onImportComplete
     }
   };
 
-  const parseAmount = (amount: any): number => {
+  const parseAmount = (amount: any): { amount: number, type: 'income' | 'expense' } => {
     try {
+      let value: number;
+      let isNegative = false;
+
       // Handle if amount is already a number
       if (typeof amount === 'number') {
-        return amount;
-      }
+        value = amount;
+        isNegative = amount < 0;
+      } else {
+        // Convert to string if it's not already
+        const amountStr = String(amount).trim();
 
-      // Convert to string if it's not already
-      const amountStr = String(amount);
-
-      // Remove currency symbols, spaces, and commas
-      let cleanAmount = amountStr.replace(/[^0-9.-]/g, '');
-
-      // Handle negative amounts marked with parentheses, e.g., "(123.45)"
-      if (amountStr.startsWith('(') && amountStr.endsWith(')')) {
-        cleanAmount = '-' + cleanAmount;
+        // Check for parentheses (negative)
+        if (amountStr.startsWith('(') && amountStr.endsWith(')')) {
+          isNegative = true;
+          value = parseFloat(amountStr.replace(/[()$,]/g, ''));
+        } else {
+          // Remove currency symbols and commas
+          value = parseFloat(amountStr.replace(/[$,]/g, ''));
+          // Check if it's already negative
+          isNegative = value < 0;
+        }
       }
 
       // Handle credit/debit columns
-      if (mapping.amount.toLowerCase().includes('debit')) {
-        return -Math.abs(parseFloat(cleanAmount));
-      }
-      if (mapping.amount.toLowerCase().includes('credit')) {
-        return Math.abs(parseFloat(cleanAmount));
+      const columnName = mapping.amount.toLowerCase();
+      if (columnName.includes('debit')) {
+        isNegative = true;
+      } else if (columnName.includes('credit')) {
+        isNegative = false;
       }
 
-      return parseFloat(cleanAmount) || 0;
+      // Make sure we have a positive amount
+      value = Math.abs(value);
+
+      return {
+        amount: value,
+        // If negative, it's an expense. If positive, it's income
+        type: isNegative ? 'expense' : 'income'
+      };
     } catch (error) {
       console.error('Error parsing amount:', amount, error);
-      return 0;
+      return { amount: 0, type: 'expense' };
     }
   };
 
@@ -340,18 +357,29 @@ const ImportWizard: React.FC<ImportWizardProps> = ({ accountId, onImportComplete
                         <th className="text-left p-2">Date</th>
                         <th className="text-left p-2">Description</th>
                         <th className="text-left p-2">Category</th>
+                        <th className="text-left p-2">Type</th>
                         <th className="text-right p-2">Amount</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {preview.map((row, i) => (
-                        <tr key={i} className="border-b">
-                          <td className="p-2">{formatDate(row.date, dateFormat)}</td>
-                          <td className="p-2">{row.description}</td>
-                          <td className="p-2">{row.category}</td>
-                          <td className="p-2 text-right">{row.amount}</td>
-                        </tr>
-                      ))}
+                      {preview.map((row, i) => {
+                        const { amount, type } = parseAmount(row.amount);
+                        return (
+                          <tr key={i} className="border-b">
+                            <td className="p-2">{formatDate(row.date, dateFormat)}</td>
+                            <td className="p-2">{row.description}</td>
+                            <td className="p-2">{row.category}</td>
+                            <td className="p-2">
+                              <span className={type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                                {type === 'income' ? '↑ Income' : '↓ Expense'}
+                              </span>
+                            </td>
+                            <td className={`p-2 text-right ${type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                              ${amount.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

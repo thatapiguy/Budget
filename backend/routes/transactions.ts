@@ -7,8 +7,20 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const db = await getDb();
-    const transactions = await db.all('SELECT * FROM transactions ORDER BY date DESC');
-    console.log('Retrieved transactions:', transactions);
+    const { account_id } = req.query;
+    
+    let query = 'SELECT * FROM transactions';
+    let params: any[] = [];
+
+    if (account_id) {
+      query += ' WHERE account_id = ?';
+      params.push(account_id);
+    }
+
+    query += ' ORDER BY date DESC';
+    
+    const transactions = await db.all(query, params);
+    console.log('Retrieved transactions:', { account_id, count: transactions.length });
     res.json(transactions);
   } catch (error) {
     console.error('Error getting transactions:', error);
@@ -23,7 +35,7 @@ router.post('/', async (req, res) => {
     contentType: req.get('Content-Type')
   });
 
-  const { account_id, category, amount, date, description } = req.body;
+  const { account_id, category, amount, date, description, type } = req.body;
 
   // Validate data types
   if (typeof account_id !== 'number' || isNaN(account_id)) {
@@ -64,16 +76,18 @@ router.post('/', async (req, res) => {
     await db.run('BEGIN TRANSACTION');
 
     try {
-      // Update account balance
+      // Update account balance based on transaction type
+      const balanceChange = type === 'expense' ? -Math.abs(amount) : Math.abs(amount);
+      
       await db.run(
         'UPDATE accounts SET current_balance = current_balance + ? WHERE id = ?',
-        [amount, account_id]
+        [balanceChange, account_id]
       );
 
       // Insert transaction
       const result = await db.run(
-        'INSERT INTO transactions (account_id, category, amount, date, description) VALUES (?, ?, ?, ?, ?)',
-        [account_id, category, amount, date, description || '']
+        'INSERT INTO transactions (account_id, category, amount, date, description, type) VALUES (?, ?, ?, ?, ?, ?)',
+        [account_id, category, Math.abs(amount), date, description || '', type]
       );
       
       await db.run('COMMIT');
@@ -84,7 +98,8 @@ router.post('/', async (req, res) => {
         category,
         amount,
         date,
-        description: description || ''
+        description: description || '',
+        type
       };
       
       console.log('Transaction created successfully:', newTransaction);
@@ -118,10 +133,10 @@ router.post('/batch', async (req, res) => {
 
     try {
       for (const transaction of transactions) {
-        const { account_id, category, amount, date, description } = transaction;
+        const { account_id, category, amount, date, description, type } = transaction;
 
         // Validate required fields
-        if (!account_id || !amount || !date) {
+        if (!account_id || !amount || !date || !type) {
           throw new Error('Missing required fields');
         }
 
@@ -131,16 +146,19 @@ router.post('/batch', async (req, res) => {
           throw new Error(`Account ${account_id} not found`);
         }
 
+        // Calculate balance change based on transaction type
+        const balanceChange = type === 'expense' ? -Math.abs(amount) : Math.abs(amount);
+
         // Update account balance
         await db.run(
           'UPDATE accounts SET current_balance = current_balance + ? WHERE id = ?',
-          [amount, account_id]
+          [balanceChange, account_id]
         );
 
-        // Insert transaction
+        // Insert transaction with type
         await db.run(
-          'INSERT INTO transactions (account_id, category, amount, date, description) VALUES (?, ?, ?, ?, ?)',
-          [account_id, category, amount, date, description || '']
+          'INSERT INTO transactions (account_id, category, amount, date, description, type) VALUES (?, ?, ?, ?, ?, ?)',
+          [account_id, category, Math.abs(amount), date, description || '', type]
         );
       }
 

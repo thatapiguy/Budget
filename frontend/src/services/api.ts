@@ -1,83 +1,71 @@
-// Make sure this IP matches your server's IP address
-const API_URL = 'http://192.168.68.88:3001/api';  // Use localhost for local network access
+import { API_URL } from '../config/constants';
+import { Account, Transaction } from '../types';
+import { AccountData, TransactionData, CreateAccountData } from '../types/api';
 
-export interface TransactionData {
-  id?: number;          // Add this field
-  account_id: number;  // Add this field
-  category: string;
-  amount: number;
-  date: string;
-  description: string;
-}
+// Accounts API
+export const accountsApi = {
+  async getAll(): Promise<Account[]> {
+    const response = await fetch(`${API_URL}/accounts`);
+    const data: AccountData[] = await response.json();
+    return data.map(account => ({
+      ...account,
+      id: account.id || 0,
+      created_at: account.created_at || new Date().toISOString()
+    }));
+  },
 
-export interface BudgetData {
-  id?: number;
-  category: string;
-  amount: number;
-  period: 'monthly' | 'annual';
-  year?: number;
-}
-
-export interface AccountData {
-  id?: number;
-  name: string;
-  type: string;
-  starting_balance: number;
-  current_balance: number;
-}
+  async create(data: CreateAccountData): Promise<Account> {
+    const response = await fetch(`${API_URL}/accounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const accountData: AccountData = await response.json();
+    return {
+      ...accountData,
+      id: accountData.id || 0,
+      created_at: accountData.created_at || new Date().toISOString()
+    };
+  }
+};
 
 // Transactions API
 export const transactionsApi = {
-  getAll: async () => {
+  async getAll(): Promise<Transaction[]> {
     try {
       const response = await fetch(`${API_URL}/transactions`);
       const data = await response.json();
-      console.log('Fetched transactions:', data);
-      return data;
+      return data.map((transaction: TransactionData) => ({
+        ...transaction,
+        id: transaction.id || 0
+      }));
     } catch (error) {
       console.error('API Error:', error);
       throw error;
     }
   },
 
-  create: async (data: TransactionData) => {
+  async create(data: Omit<TransactionData, 'id'>) {
     try {
-      console.log('Attempting to create transaction:', {
-        url: `${API_URL}/transactions`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data
-      });
-
       const response = await fetch(`${API_URL}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
-      console.log('Server response:', {
-        status: response.status,
-        ok: response.ok,
-        body: result
-      });
-
       if (!response.ok) {
+        const result = await response.json();
         throw new Error(result.error || result.details || 'Failed to create transaction');
       }
 
-      return result;
+      return response.json();
     } catch (error) {
-      console.error('Transaction creation failed:', {
-        error,
-        errorMessage: (error instanceof Error) ? error.message : 'Unknown error',
-        originalData: data
-      });
+      console.error('Transaction creation failed:', error);
       throw error;
     }
   },
 
-  update: async (id: number, data: TransactionData) => {
+  async update(id: number, data: Omit<TransactionData, 'id'>) {
     const response = await fetch(`${API_URL}/transactions/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -86,22 +74,22 @@ export const transactionsApi = {
     return response.json();
   },
 
-  delete: async (id: number) => {
+  async delete(id: number) {
     const response = await fetch(`${API_URL}/transactions/${id}`, {
       method: 'DELETE',
     });
     return response.json();
-  },
+  }
 };
 
 // Budgets API
 export const budgetsApi = {
-  getAll: async (): Promise<BudgetData[]> => {
+  async getAll() {
     const response = await fetch(`${API_URL}/budgets`);
     return response.json();
   },
 
-  create: async (data: BudgetData) => {
+  async create(data: { category: string; amount: number; period: 'monthly' | 'annual'; year?: number }) {
     const response = await fetch(`${API_URL}/budgets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -110,38 +98,12 @@ export const budgetsApi = {
     return response.json();
   },
 
-  update: async (id: number, data: BudgetData) => {
+  async update(id: number, data: { category: string; amount: number; period: 'monthly' | 'annual'; year?: number }) {
     const response = await fetch(`${API_URL}/budgets/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     return response.json();
-  },
-};
-
-// Add accounts API
-export const accountsApi = {
-  getAll: async (): Promise<AccountData[]> => {
-    const response = await fetch(`${API_URL}/accounts`);
-    return response.json();
-  },
-
-  create: async (data: Omit<AccountData, 'id' | 'current_balance'>) => {
-    const response = await fetch(`${API_URL}/accounts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  },
-
-  updateBalance: async (id: number, current_balance: number) => {
-    const response = await fetch(`${API_URL}/accounts/${id}/balance`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ current_balance }),
-    });
-    return response.json();
-  },
+  }
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
+import { Card, CardContent } from '../../../components/ui/card';
 
 interface MonthPickerProps {
   currentDate: Date;

@@ -15,6 +15,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get single account
+router.get('/:id', async (req, res) => {
+  try {
+    const db = await getDb();
+    const account = await db.get('SELECT * FROM accounts WHERE id = ?', [req.params.id]);
+    
+    if (!account) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+    
+    res.json(account);
+  } catch (error) {
+    console.error('Error getting account:', error);
+    res.status(500).json({ error: 'Failed to get account' });
+  }
+});
+
 // Add new account
 router.post('/', async (req, res) => {
   const { name, type, starting_balance } = req.body;
